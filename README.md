@@ -5,7 +5,7 @@ A pipeline for conducting genome-wide association studies (GWAS) using unix & R.
 ## Table of Contents
 - [Introduction](#introduction)
 - [Parts](#Parts)
-- [Input Data Required](#Input Data Required)
+- [Input Data Required](#InputDataRequired)
 
 ## Introduction
 Pipeline for performing genome-wide association studies (GWAS) using R. It supports data preprocessing, statistical analysis, and visualization of results.
@@ -19,7 +19,7 @@ Pipeline for performing genome-wide association studies (GWAS) using R. It suppo
 - roc-test of FDR-significant SNPs
 - Visualization of results with Manhattan and QQ plots
 
-## Input Data Required
+## InputDataRequired
 - vcf file containing population of interest
 - info file containing imputation information
 - list of patients in 0_TCGA-.*-.*_TCGA-.*-.* format
