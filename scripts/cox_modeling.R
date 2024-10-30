@@ -7,10 +7,10 @@ library(broom)
 
 # Capture command-line arguments
 args <- commandArgs(trailingOnly = TRUE)
-chromosome <- args[1]
+chromosome <- args[1] # Format is chr#
 
 #### Import Dataset ####
-LGG_allele_dat <- readRDS(paste0('LGG', chromosome, '_allele_dat.rds')) %>% 
+LGG_allele_dat <- readRDS(paste0('/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/', chromosome, '/LGG', chromosome, '_allele_dat.rds')) %>% 
   mutate(GT = as.integer(as.character(GT)))
 
 ##### For feature selection, we are not considering SNPs, therefore we reduce dataset to consider only patient-relevants ####
@@ -113,10 +113,14 @@ coxph_generalized <- LGG_allele_dat %>% # Generalized coxph model is created fro
 snp_generalized <- bind_rows(coxph_generalized) %>% 
   filter(!is.na(p.value))
 
+# Define the base output directory for the chromosome
+output_dir <- paste0('/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/', chromosome, '/')
+
 # Write to file: SNPs from basic model
-write_delim(snp_basic, file = paste0(chromosome, '_snp_basic.csv.gz'), delim = ',')
+write_delim(snp_basic, file = paste0(output_dir, chromosome, '_snp_basic.csv.gz'), delim = ',')
 
 # Write to file: SNPs from generalized model
-write_delim(snp_generalized, file = paste0(chromosome, '_snp_generalized.csv.gz'), delim = ',')
-saveRDS(snp_generalized, file = paste0(chromosome, '_snp_generalized.rds'))
+write_delim(snp_generalized, file = paste0(output_dir, chromosome, '_snp_generalized.csv.gz'), delim = ',')
+saveRDS(snp_generalized, file = paste0(output_dir, chromosome, '_snp_generalized.rds'))
+
 
