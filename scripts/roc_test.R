@@ -99,7 +99,3 @@ roc_test_summary <- tibble(
 )
 
 write_csv(roc_test_summary, 'SNPs_AUC.csv')
-
-# Final cleanup
-rm(LGG_allele_dat_sig, LGG_pat, coxph_baseline_sig, coxph_generalized_sig, roc_test_results, p_values, roc_test_summary)
-gc()  # Final garbage collection
