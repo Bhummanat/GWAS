@@ -23,3 +23,6 @@ Pipeline for performing genome-wide association studies (GWAS) using R. It suppo
 - .vcf file containing population of interest
 - .info file containing imputation information
 - list of patients in 0_TCGA-.*-.*_TCGA-.*-.* line-delimited format
+
+## Self-Reminder
+Setup config.R where environment variables is set (So others don't need to use my directories)
