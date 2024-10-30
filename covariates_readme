@@ -1,0 +1,70 @@
+Files were downloaded from:
+https://gdc.cancer.gov/about-data/publications/pancanatlas
+
+Matching significant covariates with established study:
+https://aacrjournals.org/mcr/article/17/5/1075/89990/The-Germline-Variants-rs61757955-and-rs34988193   ### Chatrath (2019)
+### The paper filtered patients from 515 to 450
+### Unsure of filtering methods
+### This might cause observed difference between the models
+
+Sample list for LGG:
+/standard/vol169/cphg_ratan/ar7jq/TCGA/samples/LGG_germline.tsv
+### fread(header = FALSE)
+
+Data were filtered for 'LGG'
+Names were kept the same except for file extension (some were changed)
+
+Special case:
+LGG_germline.exome.vcf.gz <-------------------------------- position, GT  
+### Variant called from TCGA
+
+Normal case:
+mc3.v0.2.8.PUBLIC.maf.gz <--------------------------------- somatic mutation count, IDH mutant
+### /standard/vol169/cphg_ratan/ar7jq/TCGA/somatic/LGG/
+### For IDH mutant, Hugo_Symbol %in% c("IDH1", "IDH2")
+###   Subtract from total samples
+### For somatic mutation, count the number of unique mutations
+### TP53 Mutant [Not significant in Chatrath (2019)] (Unused)
+                                                                      
+clinical_PANCAN_patient_with_followup.csv.gz <------------- treatment site (https://gdc.cancer.gov/resources-tcga-users/tcga-code-tables/tissue-source-site-codes)
+### /standard/cphg-RLscratch/syv3ap/rotation/filtered_TCGA_imports
+### Also contains:
+### tumor tissue site [Not significant in Chatrath (2019)]
+
+TCGA_mastercalls.abs_segtabs.fixed.txt <------------------- Chr 7 gain / Chr 10 loss
+### /standard/cphg-RLscratch/syv3ap/rotation/filtered_TCGA_imports
+### For Chr 7 gain: filter(Chromosome == 7 & Modal_Total_CN > 2)
+### For Chr 10 loss: filter(Chromosome == 10 & Modal_Total_CN > 10)
+
+TCGA-CDR-SupplementalTableS1.tsv <------------------------- age_at_initial_pathologic_diagnosis, gender, histological_grade, histological_type, OS, OS.time
+### /standard/vol169/cphg_ratan/ar7jq/TCGA/metadata/LGG/
+                                                                      
+TCGAA_STRUCTURE.txt <-------------------------------------- European, 'West African', 'Native American'
+### /standard/vol169/cphg_ratan/ar7jq/TCGA/metadata/LGG/
+                                                                      
+ArmCallsAndAneuploidyScore_092817.txt <-------------------- aneuplody, 1p/19q codeletion 
+### /standard/vol169/cphg_ratan/ar7jq/TCGA/metadata/LGG/
+### percent_aneuploidy = `Aneuploidy Score`/39; Did not yield percent with Chatrath (2019)
+### Aneuploidy score capped at 39. Certain chromosome arm have no meaningful alterations
+### For 1p/19q codeletion: filter(`1p` == -1 & `19q` == -1)
+                                                                      
+TCGA.LGG.sampleMap%2FHumanMethylation450.gz <-------------- MGMT promoter methylation 
+### /standard/vol169/cphg_ratan/ar7jq/TCGA/methylation/LGG/
+### Identify cg.* corresponding to MGMT promoter methylation
+### Decide cut-off for methylation state based on values
+### Reference: https://support.illumina.com/downloads/humanmethylation450_15017482_v1-2_product_files.html
+###   cpg_MGMT_promoter <- filter(str_detect(UCSC_RefGene_Name, 'MGMT')) %>% 
+###     filter(Regulatory_Feature_Group == 'Promoter_Associated')
+### Reference used to filter 'TCGA.LGG.sampleMap%2FHumanMethylation450.gz' file for MGMT_promoter methylation
+### Output stored in this directory
+### File = methylation_MGMT_promoter.csv
+### beta values cutoff set to 0.3 in accordance with:
+https://www.cell.com/cell/fulltext/S0092-8674(15)01692-X?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS009286741501692X%3Fshowall%3Dtrue
+
+TCGA.LGG.sampleMap%2FHiSeqV2_PANCAN.gz <------------------- log(TERT Expression)
+### /standard/vol169/cphg_ratan/ar7jq/TCGA/expression/LGG
+### Not significant in Chatrath (2019)
+### Shifted the data by minimun average to match format used in Chatrath (2019)
+
+
+
