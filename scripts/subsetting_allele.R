@@ -4,7 +4,7 @@ library(broom)
 
 # Capture command-line arguments
 args <- commandArgs(trailingOnly = TRUE)
-chromosome <- args[1]
+chromosome <- args[1] # In format of chr#
 
 # Load the chromosome-specific VCF file
 vcf_file <- paste0('/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/', chromosome, '_LGG_filtered.vcf.gz')
@@ -54,7 +54,7 @@ vcf_allele_filt <- vcf_allele_filt %>%
     .keep = "used"
   )
 
-output_file <- paste0('/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/LGG', chromosome, '_allele_filt.rds')
+output_file <- paste0('/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/', chromosome, '/LGG', chromosome, '_allele_filt.rds')
 saveRDS(vcf_allele_filt, file = output_file)
 
 
