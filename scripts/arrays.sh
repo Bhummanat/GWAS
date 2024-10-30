@@ -8,9 +8,6 @@
 #SBATCH --time=1-00:00:00
 #SBATCH -A ratan
 
-# Code starts here
-# set -xe # Enable both debugging and exit-on-error
-
 # Directory containing the chromosome info files
 data_dir="/standard/vol169/cphg_ratan/ar7jq/TCGA/imputed_germline"
 
@@ -29,11 +26,11 @@ for chr_num in {1..22}; do
     total_windows=$(( (last_bp / 10000000) + 1 ))
 
     # Generate options#.txt for the current chromosome (option1.txt, option2.txt, etc.)
-    option_file="${base_dir}/option${chr_num}.txt"
-    mkdir -p "$base_dir"  # Ensure the base directory exists
+    mkdir -p "$base_dir/chr${chr_num}"  # Ensure the base directory exists
+    option_file="${base_dir}/chr${chr_num}/option${chr_num}.txt"
 
     # Save total_windows to a file for later use
-    echo "$total_windows" > "${base_dir}/windows_chr${chr_num}.txt"
+    echo "$total_windows" > "${base_dir}/chr${chr_num}/windows_chr${chr_num}.txt"
 
     # Generate the window ranges and save them to option#.txt
     for i in $(seq 0 10000000 $((total_windows * 10000000))); do
