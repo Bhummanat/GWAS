@@ -4,11 +4,11 @@ library(broom)
 
 # Capture command-line arguments
 args <- commandArgs(trailingOnly = TRUE)
-chromosome <- args[1]
+chromosome <- args[1] # Format is chr#
 
 # Joining
 # SNPs Dataset
-LGG_allele_filt <- readRDS(paste0('/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/LGG', chromosome, '_allele_filt.rds')) %>%
+LGG_allele_filt <- readRDS(paste0('/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/', chromosome, '/LGG', chromosome, '_allele_filt.rds')) %>%
   as_tibble() %>%  # position, GT
   pivot_longer(contains('TCGA'), names_to = 'barcode', values_to = 'GT') %>% # Each position will have associated patients with GT values
   unite('position', `#CHROM`:POS) %>% 
@@ -119,5 +119,5 @@ patient <- left_join(patient_dat %>% select(bcr_patient_barcode, age_at_initial_
     'chr_7G10L'= `7G/10L`
   )
 
-saveRDS(patient, file = paste0('LGG', chromosome, '_allele_dat.rds'))
+saveRDS(patient, file = paste0('/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/', chromosome, '/LGG', chromosome, '_allele_dat.rds'))
 
