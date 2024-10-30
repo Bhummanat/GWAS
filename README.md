@@ -4,8 +4,8 @@ A pipeline for conducting genome-wide association studies (GWAS) using unix & R.
 
 ## Table of Contents
 - [Introduction](#introduction)
-- [Input Data Format](#input-data-format)
-- [Output](#output)
+- [Parts](#Parts)
+- [Input Data Required](#Input Data Required)
 
 ## Introduction
 Pipeline for performing genome-wide association studies (GWAS) using R. It supports data preprocessing, statistical analysis, and visualization of results.
