@@ -20,6 +20,6 @@ Pipeline for performing genome-wide association studies (GWAS) using R. It suppo
 - Visualization of results with Manhattan and QQ plots
 
 ## InputDataRequired
-- vcf file containing population of interest
-- info file containing imputation information
-- list of patients in 0_TCGA-.*-.*_TCGA-.*-.* format
+- .vcf file containing population of interest
+- .info file containing imputation information
+- list of patients in 0_TCGA-.*-.*_TCGA-.*-.* line-delimited format
