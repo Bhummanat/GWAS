@@ -50,6 +50,9 @@ rm(LGG_pat)
 gc()
 
 #### Generate KM Plots in Batches ####
+# Ensure KM_Plots directory exists
+dir.create("/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/KM_Plots", recursive = TRUE, showWarnings = FALSE)
+
 # Lower batch size to manage memory
 batch_size <- 2  
 
@@ -76,7 +79,3 @@ map(position_batches, ~ {
   })
   gc()
 })
-
-# Clean up after processing
-rm(LGG_allele_dat_sig)
-gc()
