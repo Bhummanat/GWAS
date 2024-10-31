@@ -18,6 +18,7 @@ Pipeline for performing genome-wide association studies (GWAS) using R. It suppo
 - Visualization of FDR-significant SNPs with kaplan-meier curve
 - roc-test of FDR-significant SNPs
 - Visualization of results with Manhattan and QQ plots
+- Fine-mapping
 
 ## InputDataRequired
 - .vcf file containing population of interest
