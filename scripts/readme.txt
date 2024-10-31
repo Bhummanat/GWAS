@@ -9,3 +9,4 @@
 6. FDR_and_KM.R           ### FDR-adjusted p-values and Kaplan Meier plot
 7. roc_test.R             ### pROC (baseline vs SNP)
 8. manhattan_qqplot.R     ### Combines statistics and produces Manhattan and qqplots
+9. fine-mapping.Rmd
