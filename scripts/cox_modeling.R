@@ -87,6 +87,7 @@ lambda_1se <- cvfit$lambda.1se
 coeff <- as.matrix(coef(cvfit, s = lambda_1se))
 covariate_sig <- rownames(coeff)[coeff != 0]
 covariate_generalized <- c('GT', covariate_sig)
+write(covariate_generalized, '/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/covariate_generalized.txt')
 
 # Generalized coxph over for all snps
 coxph_generalized <- LGG_allele_dat %>% # Generalized coxph model is created from entire patient dataset
