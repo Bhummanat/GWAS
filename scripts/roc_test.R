@@ -34,7 +34,7 @@ LGG_pat_clean <- LGG_pat |> filter(!if_any(everything(), is.na))
 x_imputed <- LGG_pat_clean %>% select(-c(OS.time, OS, GT)) %>% makeX()
 y <- Surv(LGG_pat_clean$OS.time, LGG_pat_clean$OS)
 
-cvfit <- cv.glmnet(x_imputed, y, family = "cox", alpha = 0.5, nfolds = 3)
+cvfit <- cv.glmnet(x_imputed, y, family = "cox", alpha = 1, nfolds = 10)
 lambda_1se <- cvfit$lambda.1se
 coeff <- as.matrix(coef(cvfit, s = lambda_1se))
 covariate_sig <- rownames(coeff)[coeff != 0]
