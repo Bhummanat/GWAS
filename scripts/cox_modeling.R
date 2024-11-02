@@ -29,6 +29,7 @@ dynamic_coxph_formula <- function(data, covariate_ext){ # data is each position;
   covariates_all <- LGG_pat %>% colnames() %>% str_flatten(collapse = '|')
   covariates_matched <- str_extract(covariate_ext, covariates_all) %>%  # covariate_ext is defined by the basic or generalized model
     unique()
+  write(covariates_matched, '/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/covariate_generalized.txt') # Covariates included in the coxph model
   
   # Filters
   covariates_to_include <- covariates_matched %>% 
@@ -82,12 +83,11 @@ x_imputed <- LGG_pat_clean %>% select(-c(OS.time, OS, GT)) %>% makeX() # makeX(n
 y <- Surv(LGG_pat_clean$OS.time, LGG_pat_clean$OS)
 
 # Extracting significant covariates (non-zero coefficients at lambda.1se)
-cvfit <- cv.glmnet(x_imputed, y, family = "cox", alpha = 0.5, nfolds = 3) # Elastic-net
+cvfit <- cv.glmnet(x_imputed, y, family = "cox", alpha = 1, nfolds = 10) # Lasso
 lambda_1se <- cvfit$lambda.1se
 coeff <- as.matrix(coef(cvfit, s = lambda_1se))
 covariate_sig <- rownames(coeff)[coeff != 0]
 covariate_generalized <- c('GT', covariate_sig)
-write(covariate_generalized, '/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/covariate_generalized.txt')
 
 # Generalized coxph over for all snps
 coxph_generalized <- LGG_allele_dat %>% # Generalized coxph model is created from entire patient dataset
