@@ -11,8 +11,10 @@ library(pROC)
 input_dir <- "/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/"
 
 #### Import Files ####
-LGG_allele_dat_sig <- readRDS(paste0(input_dir, 'LGG_allele_dat_sig.rds'))
-LGG_pat <- readRDS(paste0(input_dir, 'LGG_pat.rds'))
+LGG_allele_dat_sig <- readRDS(paste0(input_dir, 'LGG_allele_dat_sig.rds')) %>%
+  mutate(GT = as.integer(as.character(GT)))
+LGG_pat <- readRDS(paste0(input_dir, 'LGG_pat.rds')) %>% 
+  mutate(GT = as.integer(as.character(GT)))
 gc()  # Run garbage collection after loading large files
 
 dynamic_coxph_formula <- function(data, covariate_ext) { # data is each position; covariate_ext is extracted from each model
