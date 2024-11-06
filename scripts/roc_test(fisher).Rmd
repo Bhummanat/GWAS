@@ -1,0 +1,147 @@
+---
+title: "roc_test(fisher)"
+author: "Bhummanat"
+date: "2024-11-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(tidyverse)
+library(glmnet)
+library(survival)
+library(broom)
+library(ggfortify)
+library(qqman)
+library(pROC)
+```
+
+```{r}
+input_dir <- '/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/'
+```
+
+```{r}
+LGG_allele_dat_sig <- readRDS(paste0(input_dir, 'LGG_allele_dat_sig.rds')) |> 
+  mutate(GT = as.integer(as.character(GT)),
+         somatic_mut = log(somatic_mut + 1)
+         )
+covariate_sig <- readLines(paste0(input_dir, 'covariate_generalized.txt')) |> 
+  str_trim() |> 
+  setdiff('GT')
+```
+
+```{r}
+fisher_per_snp_results <- LGG_allele_dat_sig |>
+    group_by(position) |>
+    reframe(
+        covariate = covariate_sig,
+        p_value = map_dbl(covariate_sig, function(cov) {
+            data <- cur_data()  # Get the current group's data
+            if (is.factor(data[[cov]]) || is.character(data[[cov]])) {
+                table <- table(data[[cov]], data$GT)
+                result <- fisher.test(table, workspace = 2e8)
+                result$p.value
+            } else {
+                NA  # Assign NA for non-categorical covariates
+            }
+        })
+    )
+```
+
+```{r}
+# List to store plots
+plot_list <- list()
+
+# Loop over each SNP and continuous covariate
+unique_snps <- unique(LGG_allele_dat_sig$position)
+for (snp in unique_snps) {
+  # Filter data for the specific SNP
+  snp_data <- LGG_allele_dat_sig |> filter(position == snp)
+  
+  for (covariate in covariate_sig) {
+    # Check if the covariate is continuous
+    if (is.numeric(snp_data[[covariate]])) {
+      # Remove non-finite values for the current covariate
+      plot_data <- snp_data |> filter(is.finite(.data[[covariate]]))
+      
+      # Create box plot for each SNP and covariate
+      p <- ggplot(plot_data, aes(x = factor(GT), y = .data[[covariate]])) +
+        geom_boxplot() +
+        labs(
+          title = paste(covariate, ' ', snp),
+          x = "Genotype (GT)",
+          y = covariate
+        ) +
+        theme_minimal()
+      
+      # Store the plot
+      plot_list[[paste(snp, covariate, sep = "_")]] <- p
+    }
+  }
+}
+
+# Save or display all plots
+pdf("box_plots_per_snp_covariate.pdf")
+for (plot in plot_list) print(plot)
+dev.off()
+```
+
+```{r}
+continuous_covariates <- c("somatic_mut", "age_at_initial_pathologic_diagnosis")  # Add other continuous covariates if desired
+
+# List to store plots for each covariate
+global_plot_list <- list()
+
+# Loop over each continuous covariate to create a global box plot
+for (covariate in continuous_covariates) {
+  if (covariate %in% colnames(LGG_allele_dat_sig)) {
+    # Remove non-finite values (e.g., NA, Inf) to avoid plot errors
+    plot_data <- LGG_allele_dat_sig |>
+      filter(is.finite(.data[[covariate]]))
+    
+    # Create the global box plot for the covariate across all GT levels
+    p <- ggplot(plot_data, aes(x = factor(GT), y = .data[[covariate]])) +
+      geom_boxplot() +
+      labs(
+        title = paste("Global Distribution of", covariate, "by GT levels"),
+        x = "Genotype (GT)",
+        y = covariate
+      ) +
+      theme_minimal()
+    
+    # Store the plot in the list
+    global_plot_list[[covariate]] <- p
+  }
+}
+print(global_plot_list)
+```
+
+```{r}
+# Get the specific SNPs of interest
+unique_snps <- c("7_133449916", "7_133450134", "5_154668311", "5_154690482", "5_154692013")
+
+# Run ANOVA for each SNP and store the results
+anova_results <- list()
+
+for (snp in unique_snps) {
+  # Filter data for the specific SNP position
+  snp_data <- LGG_allele_dat_sig %>% filter(position == snp)
+  
+  # Perform ANOVA if there is more than one GT group
+  if(length(unique(snp_data$GT)) > 1) {
+    result <- aov(somatic_mut ~ factor(GT), data = snp_data)
+    anova_results[[snp]] <- summary(result)
+  } else {
+    anova_results[[snp]] <- "Not enough GT groups for ANOVA"
+  }
+}
+
+# View results for each SNP
+for (snp in names(anova_results)) {
+  cat("ANOVA Test for SNP:", snp, "\n")
+  print(anova_results[[snp]])
+  cat("\n")
+}
+```
+
