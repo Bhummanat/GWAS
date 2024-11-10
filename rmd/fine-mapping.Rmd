@@ -1,0 +1,195 @@
+---
+title: "fine-mapping"
+author: "Bhummanat"
+date: "2024-10-31"
+output: html_document
+---
+This script is also produce manhattan plot
+Manhattan plot and susieR is used to evaluate for credible sets
+Look for credible set summary at the bottom of each susieR output
+  Variable index can be matched in LD_BP for SNPs location
+The last chunk is used to view p-roc associated with each credible sets
+  There may be multiple credible sets, so I chose one's with best log10 and r2 to evaluate
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(tidyverse)
+library(broom)
+library(qqman)
+library(susieR)
+```
+
+```{r Directories}
+input_dir <- "/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/"
+```
+
+```{r Grab list of vcf data}
+gwas_res <- readRDS(paste0(input_dir, 'gwas_res.rds'))
+gc()
+```
+
+```{r}
+gwas_manhattan <- gwas_res %>% 
+  select(CHR, BP, p.value) %>%
+  mutate(
+    CHR = case_match(
+      CHR,
+      'X' ~ '23',
+      'Y' ~ '24',
+      .default = CHR),
+    p.value = p.value + 1e-10, # Set upper y_lim to 10
+    CHR = as.integer(CHR),
+    BP = as.integer(BP),
+    SNP = as.character(BP) # Don't need this in data if SNP assigned to each position prior
+  )
+gc()
+```
+
+```{r Manhattan plot overview}
+manhattan(gwas_manhattan, p = 'p.value', main = "Manhattan plot of GWAS p-values", cex = 0.4, annotatePval = 1e-5, annotateTop = FALSE, ylim = c(0,10),
+          highlight = c(75318086, 73314167, 1446622, 1467852, 64943580, 65235776))
+```
+
+```{r Manhattan plot chr3 significant}
+manhattan(subset(gwas_manhattan, CHR == 3), p = 'p.value', main = "Manhattan plot of GWAS p-values", cex = 0.4, annotatePval = 1e-8, annotateTop = FALSE,
+          ylim = c(0,10))
+```
+
+```{r Manhattan plot chr5 LD-significant}
+manhattan(subset(gwas_manhattan, CHR == 5), p = 'p.value', main = "Manhattan plot of GWAS p-values", cex = 0.4, annotatePval = 1e-5, annotateTop = FALSE,
+          xlim = c(154600000, 154800000), ylim = c(0,10),
+          highlight = c(154668311, 154690482, 154692013)) # graphically displayed top SNP actually (1e-8 < p.val < 5e-8)
+```
+
+```{r Manhattan plot chr7 LD-significant}
+manhattan(subset(gwas_manhattan, CHR == 7), p = 'p.value', main = "Manhattan plot of GWAS p-values", cex = 0.4, annotatePval = 2e-8, annotateTop = FALSE,
+          xlim = c(133300000, 133500000),ylim = c(0,10),
+          highlight = c(133449916, 133450134))
+```
+
+```{r LD matrix and SusieR (Chr7)}
+# GWAS statistics
+sample_size <- 472 # How many patients
+chr = 7
+LD_region <- gwas_res |> 
+  filter(CHR == chr & BP > 133300000 & BP < 133500000 & p.value < 1e-5) |> 
+  arrange(BP)
+effect_sizes <- LD_region$estimate
+std_errors <- LD_region$`std.error`
+
+genotype_file <- readRDS(paste0(input_dir, 'chr', chr, "/LGGchr", chr, "_allele_filt.rds")) |> 
+  filter(POS %in% LD_region$BP) |> 
+  select(contains('TCGA')) |> 
+  t()
+
+XtX <- cov(genotype_file)
+R <- cov2cor(XtX)
+
+# Assuming you have effect sizes (bhat) and standard errors (shat) for each SNP
+susie_fit <- susie_rss(bhat = effect_sizes, 
+                       shat = std_errors, 
+                       R = R, 
+                       n = sample_size,
+                       L = 10,
+                       max_iter = 200)
+
+# BP
+LD_BP <- LD_region$BP
+print("LD Region BP")
+print(LD_BP)
+
+# Posterior Inclusion Probabilities (PIPs)
+pips <- susieR::susie_get_pip(susie_fit)
+print("Posterior Inclusion Probabilities (PIPs):")
+print(pips)
+
+# Credible Sets and their confidence levels
+credible_sets <- susieR::susie_get_cs(susie_fit)
+print("Credible Sets and Confidence Levels:")
+print(credible_sets$cs)        # The SNP indices in each credible set
+print(credible_sets$coverage)   # The coverage (confidence level) of each set
+
+# Estimated Effect Sizes (Posterior)
+estimated_effects <- coef(susie_fit)
+print("Estimated Effect Sizes:")
+print(estimated_effects)
+
+# Summary of Results
+print("Summary of Susie Fit:")
+summary(susie_fit)
+gc()
+print("SNPs")
+print(LD_BP[c(48, 49)])
+```
+
+```{r LD matrix and SusieR (Chr5)}
+# GWAS statistics
+sample_size <- 472 # How many patients
+chr = 5
+LD_region <- gwas_res |> 
+  filter(CHR == chr & BP > 154600000 & BP < 154800000 & p.value < 1e-5) |> 
+  arrange(BP)
+effect_sizes <- LD_region$estimate
+std_errors <- LD_region$`std.error`
+
+genotype_file <- readRDS(paste0(input_dir, 'chr', chr, "/LGGchr", chr, "_allele_filt.rds")) |> 
+  filter(POS %in% LD_region$BP) |> 
+  select(contains('TCGA')) |> 
+  t()
+
+XtX <- cov(genotype_file)
+R <- cov2cor(XtX)
+
+# Assuming you have effect sizes (bhat) and standard errors (shat) for each SNP
+susie_fit <- susie_rss(bhat = effect_sizes, 
+                       shat = std_errors, 
+                       R = R, 
+                       n = sample_size,
+                       L = 10,
+                       max_iter = 200)
+
+# BP
+LD_BP <- LD_region$BP
+print("LD Region BP")
+print(LD_BP)
+
+# Posterior Inclusion Probabilities (PIPs)
+pips <- susieR::susie_get_pip(susie_fit)
+print("Posterior Inclusion Probabilities (PIPs):")
+print(pips)
+
+# Credible Sets and their confidence levels
+credible_sets <- susieR::susie_get_cs(susie_fit)
+print("Credible Sets and Confidence Levels:")
+print(credible_sets$cs)        # The SNP indices in each credible set
+print(credible_sets$coverage)   # The coverage (confidence level) of each set
+
+# Estimated Effect Sizes (Posterior)
+estimated_effects <- coef(susie_fit)
+print("Estimated Effect Sizes:")
+print(estimated_effects)
+
+# Summary of Results
+print("Summary of Susie Fit:")
+summary(susie_fit)
+gc()
+print("SNPs")
+print(LD_BP[c(8, 12, 14)])
+```
+
+```{r Extract CS statistics, chr 5 and 7}
+chr3_snps <- gwas_res |> filter(CHR == 3 & BP %in% c(53849736))
+print('chr3')
+print(chr3_snps)
+chr5_snps <- gwas_res |> filter(CHR == 5 & BP %in% c(154668311, 154690482, 154692013))
+print('chr5')
+print(chr5_snps)
+chr7_snps <- gwas_res |> filter(CHR == 7 & BP %in% c(133449916, 133450134))
+print('chr7')
+print(chr7_snps)
+chr_ref_snps <- gwas_res |> filter(CHR == 17 & BP %in% c(73314167))
+print('chr_ref')
+print(chr_ref_snps)
+```
+

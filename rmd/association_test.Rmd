@@ -1,0 +1,141 @@
+---
+title: "roc_test(fisher)"
+author: "Bhummanat"
+date: "2024-11-06"
+output: html_document
+---
+
+This script is used to evaluate the association between GT and other covariates.
+This is for troubleshooting purposes.
+All tests are performed only for SNPs that passed FDR test.
+All tests are performed on a per SNPs position basis.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(tidyverse)
+library(broom)
+library(ggpubr)
+```
+
+```{r Directories}
+input_dir <- '/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/'
+```
+
+Some manipulation so that the test could run
+Somatic_mut was changed to log to better visualize
+```{r }
+LGG_allele_dat_sig <- readRDS(paste0(input_dir, 'LGG_allele_dat_sig.rds')) |> 
+  mutate(GT = as.integer(as.character(GT)),
+         somatic_mut = log(somatic_mut + 1)
+         )
+LGG_allele_dat_sig$histological_grade <- factor(LGG_allele_dat_sig$histological_grade, ordered = FALSE)
+covariate_sig <- readLines(paste0(input_dir, 'covariate_generalized.txt')) |> 
+  str_trim() |> 
+  setdiff('GT')
+```
+
+Perform chisq-test between GT and significant covariates that are categorical
+```{r chisq}
+chisq_per_snp_results <- LGG_allele_dat_sig |>
+    group_by(position) |>
+    reframe(
+        covariate = covariate_sig,
+        p_value = map_dbl(covariate_sig, function(cov) {
+            data <- cur_data()  # Get the current group's data
+            if (is.factor(data[[cov]]) || is.character(data[[cov]])) {
+                table <- table(data[[cov]], data$GT)
+                result <- chisq.test(table, simulate.p.value = TRUE, B = 10000)
+                result$p.value
+            } else {
+                NA  # Assign NA for non-categorical covariates
+            }
+        })
+    )
+```
+
+This box plot is replaced with violin plot in the chunk below.
+Kept as this might still be relevant.
+```{r box plot}
+# List to store plots
+plot_list <- list()
+
+# Loop over each SNP and continuous covariate
+unique_snps <- unique(LGG_allele_dat_sig$position)
+for (snp in unique_snps) {
+  # Filter data for the specific SNP
+  snp_data <- LGG_allele_dat_sig |> filter(position == snp)
+  
+  for (covariate in covariate_sig) {
+    # Check if the covariate is continuous
+    if (is.numeric(snp_data[[covariate]])) {
+      # Remove non-finite values for the current covariate
+      plot_data <- snp_data |> filter(is.finite(.data[[covariate]]))
+      
+      # Create box plot for each SNP and covariate
+      p <- ggplot(plot_data, aes(x = factor(GT), y = .data[[covariate]])) +
+        geom_boxplot() +
+        labs(
+          title = paste(covariate, ' ', snp),
+          x = "Genotype (GT)",
+          y = covariate
+        ) +
+        theme_minimal()
+      
+      # Store the plot
+      plot_list[[paste(snp, covariate, sep = "_")]] <- p
+    }
+  }
+}
+
+# Save or display all plots
+pdf("box_plots_per_snp_covariate.pdf")
+for (plot in plot_list) print(plot)
+dev.off()
+```
+
+Using violin plot and ggpubr to display statistics, labels, and make better for visualization
+```{r violin plot}
+# Define the list of comparisons for statistical tests
+my_comparisons <- list(c("0", "1"), c("0", "2"), c("1", "2"))
+
+# List to store plots (violin)
+plot_list <- list()
+
+# Loop over each SNP and continuous covariate
+unique_snps <- unique(LGG_allele_dat_sig$position)
+for (snp in unique_snps) {
+  # Filter data for the specific SNP
+  snp_data <- LGG_allele_dat_sig |> filter(position == snp)
+  
+  for (covariate in covariate_sig) {
+    # Check if the covariate is continuous
+    if (is.numeric(snp_data[[covariate]])) {
+      # Remove non-finite values for the current covariate
+      plot_data <- snp_data |> filter(is.finite(.data[[covariate]]))
+      
+      # Create violin plot with ggviolin for each SNP and covariate
+      p <- ggviolin(plot_data, x = "GT", y = covariate, fill = "GT",
+                    palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+                    add = "boxplot", add.params = list(fill = "white")) +
+        labs(
+          title = paste(covariate, ' ', snp),
+          x = "Genotype (GT)",
+          y = covariate
+        ) +
+        stat_compare_means(comparisons = my_comparisons, label = "p.signif") +  # Add significance levels
+        stat_compare_means() +  # Add overall significance
+        theme_minimal()
+      
+      # Store the plot
+      plot_list[[paste(snp, covariate, sep = "_")]] <- p
+    }
+  }
+}
+
+# Save or display all plots
+pdf("violin_plots_per_snp_covariate.pdf")
+for (plot in plot_list) print(plot)
+dev.off()
+```
+

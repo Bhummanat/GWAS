@@ -1,0 +1,80 @@
+---
+title: "manhattan_qqplot"
+author: "Bhummanat"
+date: "2024-11-09"
+output: html_document
+---
+
+This script is used to output overview manhattan and qqplot across all chromosome.
+Also produces gwas_res required for fine-mapping
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load libraries
+library(data.table)
+library(tidyverse)
+library(broom)
+library(qqman)
+```
+
+```{r Set the directory where the .rds files are stored}
+input_dir <- "/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/"
+# Get a list of all the .rds files for each chromosome
+snp_generalized_parts <- list.files(input_dir, pattern = "chr.*_snp_generalized.rds", full.names = TRUE, recursive = TRUE) # CHECK RECURSIVE
+```
+
+```{r Load files}
+# Read all SNP data files and combine them
+snp_generalized <- map_dfr(snp_generalized_parts, readRDS)
+
+# Load ROC-test Data
+roc_test <- fread('/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/SNPs_AUC.csv') %>%
+  rename_with(~ str_replace(., 'p_value', 'p-roc'))
+```
+
+Joining Datasets (Includes: CHR, BP, snp = 'snp' or AUC-sig, p-roc, conf. ind, exponentiate)
+Outputs gwas_res.csv.gz
+```{r Joining Datasets}
+gwas_res <- left_join(snp_generalized, roc_test, join_by(snp_position == position)) %>%
+  separate(snp_position, into = c('CHR', 'BP'), sep = '_')
+
+# Write to file gwas_res (csv.gz and rds)
+saveRDS(gwas_res, 'gwas_res.rds')
+write_delim(gwas_res, 'gwas_res.csv.gz', delim = ',')
+```
+
+I set SNP as BP values.
+This is so I can track which SNPs is label on the manhattan plot.
+Highlight is currently used for SNPs from the reference paper (from covariates_readme)
+  dbSNP was used for these position
+```{r Manhattan Plot}
+gwas_res <- readRDS('/standard/cphg-RLscratch/syv3ap/rotation/TCGA_LGG_imputed_germline/gwas_res.rds') # Troubleshoot
+
+png(paste0(input_dir, "GWAS_manhattan_plot.png", width = 3000, height = 1200, res = 150))
+gwas_res %>%
+  select(CHR, BP, p.value) %>%
+  mutate(
+    CHR = case_match(
+      CHR,
+      'X' ~ '23',
+      'Y' ~ '24',
+      .default = CHR),
+    p.value = p.value + 1e-10, # Set upper y_lim to 10
+    CHR = as.integer(CHR),
+    BP = as.integer(BP),
+    SNP = as.character(BP) # Don't need this in data if SNP assigned to each position prior
+  ) %>%
+  manhattan(p = 'p.value', main = "Manhattan plot of GWAS p-values", cex = 0.4, annotatePval = 1e-5, annotateTop = FALSE,
+            highlight = c(75318086, 73314167, 1446622, 1467852, 64943580, 65235776)) # Optional highlights
+dev.off()
+```
+
+```{r QQplot}
+png(paste0(input_dir, "GWAS_qqplot.png", width = 3000, height = 1200, res = 150))
+qq(gwas_res$p.value, main = "Q-Q plot of GWAS p-values")
+dev.off()
+```
+
+
+
+
