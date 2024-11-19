@@ -1,6 +1,6 @@
 # GWAS Pipeline in R
 
-A pipeline for conducting genome-wide association studies (GWAS) using unix & R.
+A pipeline for conducting genome-wide association studies (GWAS) using bash & R.
 
 ## Table of Contents
 - [Introduction](#introduction)
